@@ -1,0 +1,4 @@
+# ignore all data files
+dataset
+.DS_Store
+*.pyc
