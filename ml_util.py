@@ -5,9 +5,9 @@
 # Author: Feng Liang
 # Email: liangfeng1987@gmail.com
 # Date: 2013-10-13 10:15:11
-# Last Modified: 2013-10-13 11:37:57
+# Last Modified: 2013-10-15 15:49:51
 
-from numpy import zeros
+from numpy import zeros, random, tile, shape
 
 
 def load_data(file_name, delimiter, at_last_column=True):
@@ -55,6 +55,51 @@ def auto_normalize(dataset):
     ex_min_features = tile(min_features, (data_size, 1))
     ex_range_features = tile(range_features, (data_size, 1))
 
-    normalized_dataset = (normalized_dataset - ex_min_features) / ex_range_features
+    normalized_dataset = (dataset - ex_min_features) / ex_range_features
 
     return normalized_dataset, min_features, range_features
+
+
+def split_dataset(dataset, fold=5):
+    '''
+    Split dataset into $fold parts equally, the default fold is 5
+    '''
+    if fold < 2 or fold > dataset.shape[0]:
+        raise ValueError(
+            "the parameter fold should greater than 2 and less than"
+            " the number of samples in dataset")
+
+    # random shuffle dataset
+    random.shuffle(dataset)
+    
+    instance_num = dataset.shape[0]
+    sample_num = int(instance_num/fold)
+
+    return_vec = []
+    start = 0
+    for i in range(fold):
+        if i < fold - 1:
+            return_vec.append(dataset[start:start+sample_num, :])
+        else:
+            return_vec.append(dataset[start:, :])
+
+        start += sample_num
+
+    return return_vec
+
+
+def cal_accuracy(predicted_labels, ground_truth_labels):
+    '''
+    Calculate error rate for classification problem
+    '''
+    # assert two label vectors have the same length
+    assert len(predicted_labels) == len(ground_truth_labels)
+
+    size = len(predicted_labels)
+    correct_num = 0
+
+    for index in range(size):
+        if predicted_labels[index] == ground_truth_labels[index]:
+            correct_num += 1
+
+    return float(correct_num) / float(size)
