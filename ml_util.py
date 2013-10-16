@@ -5,9 +5,9 @@
 # Author: Feng Liang
 # Email: liangfeng1987@gmail.com
 # Date: 2013-10-13 10:15:11
-# Last Modified: 2013-10-15 15:49:51
+# Last Modified: 2013-10-16 16:39:29
 
-from numpy import zeros, random, tile, shape
+from numpy import zeros, random, tile, shape, array
 
 
 def load_data(file_name, delimiter, at_last_column=True):
@@ -38,7 +38,7 @@ def load_data(file_name, delimiter, at_last_column=True):
             label_vector.append(splited_fields[0])
         index += 1
 
-    return data_matrix, label_vector
+    return data_matrix, array(label_vector)
 
 
 def auto_normalize(dataset):
@@ -60,7 +60,7 @@ def auto_normalize(dataset):
     return normalized_dataset, min_features, range_features
 
 
-def split_dataset(dataset, fold=5):
+def split_dataset(dataset, label, fold=5):
     '''
     Split dataset into $fold parts equally, the default fold is 5
     '''
@@ -69,23 +69,33 @@ def split_dataset(dataset, fold=5):
             "the parameter fold should greater than 2 and less than"
             " the number of samples in dataset")
 
+    if not len(dataset) == len(label):
+        raise ValueError(
+            "the dataset matrix and label array should have the same "
+            "leading dimension")
+
     # random shuffle dataset
-    random.shuffle(dataset)
-    
+    perm = random.permutation(len(label))
+    random_dataset = dataset[perm]
+    random_label = label[perm]
+
     instance_num = dataset.shape[0]
     sample_num = int(instance_num/fold)
 
-    return_vec = []
+    dataset_ret = []
+    label_ret = []
     start = 0
     for i in range(fold):
         if i < fold - 1:
-            return_vec.append(dataset[start:start+sample_num, :])
+            dataset_ret.append(random_dataset[start:start+sample_num, :])
+            label_ret.append(random_label[start:start+sample_num])
         else:
-            return_vec.append(dataset[start:, :])
+            dataset_ret.append(random_dataset[start:, :])
+            label_ret.append(random_label[start:])
 
         start += sample_num
 
-    return return_vec
+    return dataset_ret, label_ret
 
 
 def cal_accuracy(predicted_labels, ground_truth_labels):
@@ -93,7 +103,9 @@ def cal_accuracy(predicted_labels, ground_truth_labels):
     Calculate error rate for classification problem
     '''
     # assert two label vectors have the same length
-    assert len(predicted_labels) == len(ground_truth_labels)
+    if not len(predicted_labels) == len(ground_truth_labels):
+        raise ValueError(
+            "Two label arrays should have the same length")
 
     size = len(predicted_labels)
     correct_num = 0
